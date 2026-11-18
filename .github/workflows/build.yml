@@ -1,0 +1,35 @@
+name: build
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Android arm64
+        run: |
+          CXX=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang++
+          $CXX -O3 -std=c++17 -static-libstdc++ -o atelier4 atelier4.cpp
+          file atelier4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atelier4-android-arm64
+          path: atelier4
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+      - name: Build WebAssembly
+        run: |
+          emcc -O3 -std=c++17 atelier4.cpp -sEXPORTED_FUNCTIONS=_main,_atelier_cmd -sEXPORTED_RUNTIME_METHODS=ccall -sALLOW_MEMORY_GROWTH -o atelier4.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atelier4-wasm
+          path: |
+            atelier4.js
+            atelier4.wasm
